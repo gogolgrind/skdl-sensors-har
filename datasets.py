@@ -2,7 +2,8 @@
 from utils import *
 import torch.utils.data
 from sklearn.model_selection import train_test_split
-from ipypb import ipb
+#from ipypb import ipb
+from tqdm import tqdm
 
 rseed = 42
 
@@ -25,7 +26,7 @@ class pamap2Dataset(torch.utils.data.Dataset):
         self.evaluate = evaluate
         
         
-        for i in ipb(range(len(subjects))):
+        for i in tqdm(range(len(subjects))):
             data = []
             labels = []
             subject = subjects[i]
