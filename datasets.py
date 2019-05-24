@@ -12,31 +12,44 @@ class pamap2Dataset(torch.utils.data.Dataset):
     """
         
     """
-    def __init__(self,subjects,evaluate=False,
+    def __init__(self,subjects,fold='train',
                  win_size=256,step=128,
                  num_classes = 4,
+                 test_subject = 6,
                  val_rate = 0.3):
         """
         """
         self.data = []
         self.labels = []
+        self.test_data = []
+        self.test_labels = []
         self.win_size = win_size
         self.step = step
         
-        self.evaluate = evaluate
+        self.fold = fold
         
         
         for i in tqdm(range(len(subjects))):
-            data = []
-            labels = []
+            #data = []
+            #labels = []
             subject = subjects[i]
             for window in sliding_window(subject[useful_columns],win_size = self.win_size,
                                          step=self.step):
-                self.data.append(window[data_columns])
-                self.labels.append(major_filter(window['activityID']))
+                if i != test_subject:
+                    self.data.append(window[data_columns])
+                    self.labels.append(major_filter(window['activityID']))
+                else:
+                    self.test_data.append(window[data_columns])
+                    self.test_labels.append(major_filter(window['activityID']))
         self.data = np.vstack(self.data)
         self.data = self.data.reshape([-1,self.win_size,len(data_columns)]).astype('float32')
         self.labels = np.hstack(self.labels)
+        
+        
+        self.test_data = np.vstack(self.test_data)
+        self.test_data = self.test_data.reshape([-1,self.win_size,len(data_columns)]).astype('float32')
+        self.test_labels = np.hstack(self.test_labels)
+        self.test_labels = one_hot(self.test_labels,num_classes).astype('float32')
         
         self.labels = one_hot(self.labels,num_classes).astype('float32')
         
@@ -64,24 +77,27 @@ class pamap2Dataset(torch.utils.data.Dataset):
     def __len__(self,):
         """
         """
-        if not self.evaluate:
+        if self.fold == 'train':
             return len(self.train_data)
-        else:
+        elif self.fold == 'val':
             return len(self.val_data)
-            
+        elif self.fold == 'test':
+            return len(self.test_data)
     
     def __getitem__(self, index):
         """
         """
-        if not self.evaluate:
+        if self.fold == 'train':
             data = self.train_data[index]
             label =  self.train_labels[index]
-        else:
+        elif self.fold == 'val':
             data = self.val_data[index]
             label =  self.val_labels[index]
-        
+        elif self.fold == 'test':
+            data = self.test_data[index]
+            label =  self.test_labels[index]
         return data,label
-    
+
 #### predefined
     
 num2label = {1: 'lying',
