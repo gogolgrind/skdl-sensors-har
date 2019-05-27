@@ -7,96 +7,6 @@ from tqdm import tqdm
 
 rseed = 42
 
-class pamap2Dataset(torch.utils.data.Dataset):
-    
-    """
-        
-    """
-    def __init__(self,subjects,fold='train',
-                 win_size=256,step=128,
-                 num_classes = 4,
-                 test_subject = 6,
-                 val_rate = 0.3):
-        """
-        """
-        self.data = []
-        self.labels = []
-        self.test_data = []
-        self.test_labels = []
-        self.win_size = win_size
-        self.step = step
-        
-        self.fold = fold
-        
-        
-        for i in tqdm(range(len(subjects))):
-            #data = []
-            #labels = []
-            subject = subjects[i]
-            for window in sliding_window(subject[useful_columns],win_size = self.win_size,
-                                         step=self.step):
-                if i != test_subject:
-                    self.data.append(window[data_columns])
-                    self.labels.append(major_filter(window['activityID']))
-                else:
-                    self.test_data.append(window[data_columns])
-                    self.test_labels.append(major_filter(window['activityID']))
-        self.data = np.vstack(self.data)
-        self.data = self.data.reshape([-1,self.win_size,len(data_columns)]).astype('float32')
-        self.labels = np.hstack(self.labels)
-        
-        
-        self.test_data = np.vstack(self.test_data)
-        self.test_data = self.test_data.reshape([-1,self.win_size,len(data_columns)]).astype('float32')
-        self.test_labels = np.hstack(self.test_labels)
-        self.test_labels = one_hot(self.test_labels,num_classes).astype('float32')
-        
-        self.labels = one_hot(self.labels,num_classes).astype('float32')
-        
-        self.total_size = len(self.data)
-        
-        indxs = train_test_split(np.arange(self.total_size),test_size=val_rate,random_state=rseed)
-        self.train_idxs = indxs[0]
-        self.val_idxs = indxs[1]
-        
-        
-        ## actions in original data are sequential,
-        ## e.g. subject makeas action1, then action2 ... action3
-        #self.val_rate = val_rate
-        #self.val_size = int(self.val_rate*self.total_size)
-
-        #self.train_rate = 1-self.val_rate
-        #self.train_size = int(self.train_rate*self.total_size)
-        
-        self.train_data = self.data[self.train_idxs]
-        self.train_labels = self.labels[self.train_idxs]
-        self.val_data = self.data[self.val_idxs]
-        self.val_labels = self.labels[self.val_idxs]
-        
-        
-    def __len__(self,):
-        """
-        """
-        if self.fold == 'train':
-            return len(self.train_data)
-        elif self.fold == 'val':
-            return len(self.val_data)
-        elif self.fold == 'test':
-            return len(self.test_data)
-    
-    def __getitem__(self, index):
-        """
-        """
-        if self.fold == 'train':
-            data = self.train_data[index]
-            label =  self.train_labels[index]
-        elif self.fold == 'val':
-            data = self.val_data[index]
-            label =  self.val_labels[index]
-        elif self.fold == 'test':
-            data = self.test_data[index]
-            label =  self.test_labels[index]
-        return data,label
 
 #### predefined
     
@@ -175,4 +85,113 @@ data_columns = [
  'ankle_magnometer_z',
 ]
 
+data_columns_onehand = [ 
+ 'hand_acc_16g_x',
+ 'hand_acc_16g_y',
+ 'hand_acc_16g_z',
+ 'hand_gyroscope_x',
+ 'hand_gyroscope_y',
+ 'hand_gyroscope_z',
+ 'hand_magnometer_x',
+ 'hand_magnometer_y',
+ 'hand_magnometer_z',
+
+ 
+]
+
 useful_columns =  data_columns  + ['activityID']
+
+useful_columns_onehand =  data_columns_onehand  + ['activityID']
+
+
+class pamap2Dataset(torch.utils.data.Dataset):
+    
+    """
+        
+    """
+    def __init__(self,subjects,fold='train',
+                 win_size=256,step=128,
+                 num_classes = 4,
+                 test_subject = 6,
+                 useful_columns = useful_columns,
+                 val_rate = 0.3):
+        """
+        """
+        self.data = []
+        self.labels = []
+        self.test_data = []
+        self.test_labels = []
+        self.win_size = win_size
+        self.step = step
+        
+        self.fold = fold
+        
+        
+        for i in tqdm(range(len(subjects))):
+            #data = []
+            #labels = []
+            subject = subjects[i]
+            for window in sliding_window(subject[useful_columns],win_size = self.win_size,
+                                         step=self.step):
+                if i != test_subject:
+                    self.data.append(window[useful_columns[:-1]])
+                    self.labels.append(major_filter(window['activityID']))
+                else:
+                    self.test_data.append(window[useful_columns[:-1]])
+                    self.test_labels.append(major_filter(window['activityID']))
+        self.data = np.vstack(self.data)
+        self.data = self.data.reshape([-1,self.win_size,len(useful_columns[:-1])]).astype('float32')
+        self.labels = np.hstack(self.labels)
+        
+        
+        self.test_data = np.vstack(self.test_data)
+        self.test_data = self.test_data.reshape([-1,self.win_size,len(useful_columns[:-1])]).astype('float32')
+        self.test_labels = np.hstack(self.test_labels)
+        self.test_labels = one_hot(self.test_labels,num_classes).astype('float32')
+        
+        self.labels = one_hot(self.labels,num_classes).astype('float32')
+        
+        self.total_size = len(self.data)
+        
+        indxs = train_test_split(np.arange(self.total_size),test_size=val_rate,random_state=rseed)
+        self.train_idxs = indxs[0]
+        self.val_idxs = indxs[1]
+        
+        
+        ## actions in original data are sequential,
+        ## e.g. subject makeas action1, then action2 ... action3
+        #self.val_rate = val_rate
+        #self.val_size = int(self.val_rate*self.total_size)
+
+        #self.train_rate = 1-self.val_rate
+        #self.train_size = int(self.train_rate*self.total_size)
+        
+        self.train_data = self.data[self.train_idxs]
+        self.train_labels = self.labels[self.train_idxs]
+        self.val_data = self.data[self.val_idxs]
+        self.val_labels = self.labels[self.val_idxs]
+        
+        
+    def __len__(self,):
+        """
+        """
+        if self.fold == 'train':
+            return len(self.train_data)
+        elif self.fold == 'val':
+            return len(self.val_data)
+        elif self.fold == 'test':
+            return len(self.test_data)
+    
+    def __getitem__(self, index):
+        """
+        """
+        if self.fold == 'train':
+            data = self.train_data[index]
+            label =  self.train_labels[index]
+        elif self.fold == 'val':
+            data = self.val_data[index]
+            label =  self.val_labels[index]
+        elif self.fold == 'test':
+            data = self.test_data[index]
+            label =  self.test_labels[index]
+        return data,label
