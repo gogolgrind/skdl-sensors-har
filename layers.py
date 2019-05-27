@@ -117,7 +117,7 @@ class multichannel_sinc_conv(nn.Module):
                  N_channels = 27, 
                  Filt_dim = 5, 
                  fs = 100,
-                 cutfreq_type = 'mel', 
+                 cutfreq_type = 'random', 
                  filt_type = 'sinc',
                  device = 'cuda'):
         super(multichannel_sinc_conv,self).__init__()
