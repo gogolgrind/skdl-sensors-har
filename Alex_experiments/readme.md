@@ -1,0 +1,7 @@
+
+In this experiments the following repositories where used
+<br>
+- https://github.com/YuliangXiu/MobilePose-pytorch
+- https://github.com/una-dinosauria/3d-pose-baseline
+- https://github.com/facebookresearch/VideoPose3D
+- https://github.com/yysijie/st-gcn
